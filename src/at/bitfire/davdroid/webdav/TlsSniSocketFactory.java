@@ -91,7 +91,7 @@ public class TlsSniSocketFactory extends SSLConnectionSocketFactory {
 				enabledCiphers.addAll(new HashSet<>(Arrays.asList(socket.getEnabledCipherSuites())));
 
 				Log.v(TAG, "Setting allowed TLS ciphers: " + StringUtils.join(enabledCiphers, ", "));
-				com.owncloud.android.at.bitfire.davdroid.webdav.TlsSniSocketFactory.cipherSuites = enabledCiphers.toArray(new String[enabledCiphers.size()]);
+				TlsSniSocketFactory.cipherSuites = enabledCiphers.toArray(new String[enabledCiphers.size()]);
 			}
 		} catch (IOException e) {
 		}

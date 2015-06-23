@@ -354,4 +354,7 @@
 
     <string name="setup_read_only">read-only</string>
 
+    <string name="setup_task_lists">Task lists</string>
+    <string name="setup_select_task_lists">Select task lists for synchronization:</string>
+
 </resources>

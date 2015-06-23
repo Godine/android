@@ -150,12 +150,12 @@ public class SelectCollectionsAdapter extends BaseAdapter implements ListAdapter
 				v = inflater.inflate(R.layout.setup_calendars_heading, parent, false);
 				break;
 			case TYPE_TASK_LISTS_HEADING:
-				//v = inflater.inflate(R.layout.setup_task_lists_heading, parent, false);
-				//break;
+				v = inflater.inflate(R.layout.setup_task_lists_heading, parent, false);
+				break;
 			case TYPE_CALENDARS_ROW:
 			case TYPE_TASK_LISTS_ROW:
-				//v = inflater.inflate(android.R.layout.simple_list_item_multiple_choice, null);
-				//v.setPadding(0, 8, 0, 8);
+				v = inflater.inflate(android.R.layout.simple_list_item_multiple_choice, null);
+				v.setPadding(0, 8, 0, 8);
 			}
 		}
 		
@@ -168,12 +168,12 @@ public class SelectCollectionsAdapter extends BaseAdapter implements ListAdapter
 			setContent((CheckedTextView)v, R.drawable.calendar, (ServerInfo.ResourceInfo) getItem(position));
 			break;
 		case TYPE_TASK_LISTS_ROW:
-			//setContent((CheckedTextView)v, R.drawable.tasks, (ServerInfo.ResourceInfo) getItem(position));
+			setContent((CheckedTextView)v, R.drawable.tasks, (ServerInfo.ResourceInfo) getItem(position));
 		}
 
 		// disable task list selection if there's no local task provider
-/*
-		if (viewType == TYPE_TASK_LISTS_ROW && !LocalTaskList.isAvailable(context)) {
+
+		if (viewType == TYPE_TASK_LISTS_ROW ) {
 			final CheckedTextView check = (CheckedTextView)v;
 			check.setEnabled(false);
 			check.setOnClickListener(new View.OnClickListener() {
@@ -183,7 +183,7 @@ public class SelectCollectionsAdapter extends BaseAdapter implements ListAdapter
 				}
 			});
 		}
-*/
+
 		return v;
 	}
 	

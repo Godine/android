@@ -25,6 +25,8 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
+import android.app.DialogFragment;
+import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -68,9 +70,14 @@ import com.owncloud.android.files.services.FileUploader;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.services.OperationsService;
 import com.owncloud.android.ui.RadioButtonPreference;
+import com.owncloud.android.ui.contactsetup.AddAccountActivity;
+import com.owncloud.android.ui.contactsetup.QueryServerDialogFragment;
 import com.owncloud.android.utils.DisplayUtils;
 
 import java.io.File;
+import java.net.URISyntaxException;
+
+import at.bitfire.davdroid.resource.ServerInfo;
 
 
 /**
@@ -185,12 +192,26 @@ public class Preferences extends SherlockPreferenceActivity
             pContact.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    Context context = getApplicationContext();
-                    CharSequence text = "Button Clicked !!!";
-                    int duration = Toast.LENGTH_SHORT;
 
-                    Toast toast = Toast.makeText(context, text, duration);
-                    toast.show();
+
+                    /*
+                    FragmentTransaction ft = getFragmentManager().beginTransaction();
+
+                    Bundle args = new Bundle();
+                    //try {
+                        args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
+                   // } catch (URISyntaxException e) {
+                    //}
+                    args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
+                    args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
+                    args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
+
+                    DialogFragment dialog = new QueryServerDialogFragment();
+                    dialog.setArguments(args);
+                    dialog.show(ft, QueryServerDialogFragment.class.getName());
+                    */
+                    Intent intent = new Intent(Preferences.this, AddAccountActivity.class);
+                    startActivity(intent);
 
                     return true;
                 }

@@ -124,8 +124,27 @@
 	
 	<style name="OAuthDialog" parent="@android:style/Theme.Dialog">
 		<item name="android:windowNoTitle">false</item>	
-	</style>    
-		
+	</style>
+
+	<style name="AppBaseTheme" parent="android:Theme.Holo.Light">
+		<!--
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        -->
+	</style>
+
+	<!-- Application theme. -->
+	<style name="AppTheme" parent="AppBaseTheme">
+		<!-- All customizations that are NOT specific to a particular API-level can go here. -->
+	</style>
+
+	<style name="TextView.Heading" parent="AppTheme">
+		<item name="android:padding">5dp</item>
+		<item name="android:background">#7ca42b</item>
+		<item name="android:textColor">#ffffff</item>
+	</style>
+
 	<color name="setup_text_hint">#777777</color>
 	<color name="setup_text_typed">#000000</color>
 </resources>

@@ -337,5 +337,21 @@
     <string name="sync_error_title">Synchronization failed</string>
     <string name="cat_sync">Contacts and Calendars</string>
     <string name="cat_sync_button">Configure Synchronization</string>
+    <string name="setup_query_server">Querying server, Please wait !!</string>
+
+    <string name="exception_cert_path_validation">Untrusted certificate in certificate path. See FAQ for more info.</string>
+    <string name="exception_http">HTTP error: %s</string>
+    <string name="exception_incapable_resource">Missing capabilities: %s</string>
+    <string name="exception_io">I/O error: %s</string>
+    <string name="exception_uri_syntax">Invalid URI: %s</string>
+    <string name="setup_what_to_sync">Which collections shall be synchronized?</string>
+
+    <string name="setup_address_books">Address books</string>
+    <string name="setup_select_address_book">Select up to one address book (tap again to unselect) for synchronization:</string>
+
+    <string name="setup_calendars">Calendars</string>
+    <string name="setup_select_calendars">Select calendars for synchronization:</string>
+
+    <string name="setup_read_only">read-only</string>
 
 </resources>

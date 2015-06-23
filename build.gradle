@@ -81,6 +81,15 @@ android {
         }
     }
 
+    android {
+        packagingOptions {
+            exclude 'LICENSE'
+            exclude 'META-INF/NOTICE.txt'
+            exclude 'META-INF/LICENSE.txt'
+        }
+    }
+
+
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7

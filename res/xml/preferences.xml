@@ -59,6 +59,12 @@
 	                        android:summary="@string/prefs_log_summary_history"/ -->
                         
     </PreferenceCategory>
+
+	<PreferenceCategory android:title="@string/cat_sync" android:key="contacts">
+
+		<Preference android:title="@string/cat_sync_button" android:key="configure" />
+
+	</PreferenceCategory>
 	
 	<PreferenceCategory android:title="@string/prefs_category_more" android:key="more">
     <Preference android:title="@string/prefs_help" android:key="help" />

@@ -334,5 +334,8 @@
 
     <string name="auth_refresh_button">Refresh connection</string>
     <string name="auth_host_address">Server address</string>
+    <string name="sync_error_title">Synchronization failed</string>
+    <string name="cat_sync">Contacts and Calendars</string>
+    <string name="cat_sync_button">Configure Synchronization</string>
 
 </resources>

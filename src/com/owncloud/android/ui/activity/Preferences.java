@@ -49,6 +49,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockPreferenceActivity;
@@ -177,6 +178,23 @@ public class Preferences extends SherlockPreferenceActivity
                 }
             });            
             
+        }
+
+        Preference pContact = findPreference("configure");
+        if(pContact != null) {
+            pContact.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    Context context = getApplicationContext();
+                    CharSequence text = "Button Clicked !!!";
+                    int duration = Toast.LENGTH_SHORT;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+
+                    return true;
+                }
+            });
         }
 
         PreferenceCategory preferenceCategory = (PreferenceCategory) findPreference("more");

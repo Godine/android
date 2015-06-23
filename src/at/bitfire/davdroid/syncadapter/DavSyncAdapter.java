@@ -147,8 +147,8 @@ public abstract class DavSyncAdapter extends AbstractThreadedSyncAdapter impleme
 						syncResult.stats.numAuthExceptions++;   // hard error
 
 						exceptionToShow = ex;
-						exceptionIntent = new Intent(context, AccountActivity.class);
-						exceptionIntent.putExtra(AccountActivity.EXTRA_ACCOUNT, account);
+						//exceptionIntent = new Intent(context, AccountActivity.class);
+						//exceptionIntent.putExtra(AccountActivity.EXTRA_ACCOUNT, account);
 					} else if (ex.isClientError()) {
 						Log.e(TAG, "Hard HTTP error " + ex.getCode(), ex);
 						syncResult.stats.numParseExceptions++;  // hard error
@@ -183,7 +183,7 @@ public abstract class DavSyncAdapter extends AbstractThreadedSyncAdapter impleme
 
 			PendingIntent contentIntent = PendingIntent.getActivity(context, 0, exceptionIntent, 0);
 			Notification.Builder builder = new Notification.Builder(context)
-					.setSmallIcon(R.drawable.ic_launcher)
+					.setSmallIcon(R.drawable.logo)
 					.setPriority(Notification.PRIORITY_LOW)
 					.setOnlyAlertOnce(true)
 					.setWhen(System.currentTimeMillis())

@@ -356,5 +356,6 @@
 
     <string name="setup_task_lists">Task lists</string>
     <string name="setup_select_task_lists">Select task lists for synchronization:</string>
+    <string name="setup_add_account">Add account</string>
 
 </resources>

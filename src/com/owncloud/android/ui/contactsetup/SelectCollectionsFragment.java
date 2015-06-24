@@ -7,8 +7,14 @@
  */
 package com.owncloud.android.ui.contactsetup;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.ListFragment;
+import android.content.ContentResolver;
 import android.os.Bundle;
+import android.provider.CalendarContract;
+import android.provider.ContactsContract;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,13 +25,21 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 
 import com.owncloud.android.R;
 
+import java.util.List;
+
+import at.bitfire.davdroid.Constants;
+import at.bitfire.davdroid.resource.LocalCalendar;
+import at.bitfire.davdroid.resource.LocalStorageException;
 import at.bitfire.davdroid.resource.ServerInfo;
+import at.bitfire.davdroid.syncadapter.AccountSettings;
 
 public class SelectCollectionsFragment extends ListFragment {
+	public static final String TAG = "davdroid.AccountDetails";
 
 	protected ServerInfo serverInfo;
 
@@ -63,14 +77,14 @@ public class SelectCollectionsFragment extends ListFragment {
 		listView.setOnItemClickListener(new OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-				int itemPosition = position - 1;	// one list header view at pos. 0
+				int itemPosition = position - 1;    // one list header view at pos. 0
 				if (adapter.getItemViewType(itemPosition) == SelectCollectionsAdapter.TYPE_ADDRESS_BOOKS_ROW) {
 					// unselect all other address books
 					for (int pos = 1; pos <= adapter.getNAddressBooks(); pos++)
 						if (pos != itemPosition)
 							listView.setItemChecked(pos + 1, false);
 				}
-				
+
 				getActivity().invalidateOptionsMenu();
 			}
 		});
@@ -78,14 +92,27 @@ public class SelectCollectionsFragment extends ListFragment {
 	
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-	    //inflater.inflate(R.menu.only_next, menu);
+		System.out.println("onCreateOptionsMenu");
+
+		inflater.inflate(R.menu.setup_account_details, menu);
 	}
 
-	/*
+	@Override
+	public void onPrepareOptionsMenu(Menu menu) {
+		boolean ok = false;
+		try {
+			ok = getListView().getCheckedItemCount() > 0;
+		} catch(IllegalStateException e) {
+		}
+		MenuItem item = menu.findItem(R.id.add_account);
+		item.setEnabled(ok);
+	}
+
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-		case R.id.next:
+		case R.id.add_account:
 			// synchronize only selected collections
 			for (ServerInfo.ResourceInfo addressBook : serverInfo.getAddressBooks())
 				addressBook.setEnabled(false);
@@ -100,31 +127,61 @@ public class SelectCollectionsFragment extends ListFragment {
 				ServerInfo.ResourceInfo info = (ServerInfo.ResourceInfo)adapter.getItem(position);
 				info.setEnabled(true);
 			}
-			
-			getFragmentManager().beginTransaction()
-				.replace(R.id.right_pane, new AccountDetailsFragment())
-				.addToBackStack(null)
-				.commitAllowingStateLoss();
+
+			addAccount();
+
 			break;
 		default:
 			return false;
 		}
 		return true;
 	}
-	
-	
-	// input validation
-	
-	@Override
-	public void onPrepareOptionsMenu(Menu menu) {
-		boolean ok = false;
-		try {
-			ok = getListView().getCheckedItemCount() > 0;
-		} catch(IllegalStateException e) {
-		}
-		MenuItem item = menu.findItem(R.id.next);
-		item.setEnabled(ok);
+
+	void addAccount() {
+		String accountName = serverInfo.getUserName();
+
+		AccountManager accountManager = AccountManager.get(getActivity());
+		Account account = new Account(accountName, Constants.ACCOUNT_TYPE);
+		Bundle userData = AccountSettings.createBundle(serverInfo);
+
+		if (accountManager.addAccountExplicitly(account, serverInfo.getPassword(), userData)) {
+			addSync(account, ContactsContract.AUTHORITY, serverInfo.getAddressBooks(), null);
+
+			addSync(account, CalendarContract.AUTHORITY, serverInfo.getCalendars(), new AddSyncCallback() {
+				@Override
+				public void createLocalCollection(Account account, ServerInfo.ResourceInfo calendar) throws LocalStorageException {
+					LocalCalendar.create(account, getActivity().getContentResolver(), calendar);
+				}
+			});
+
+			getActivity().finish();
+		} else
+			Toast.makeText(getActivity(), "Couldn't create account (account with this name already existing?)", Toast.LENGTH_LONG).show();
 	}
 
-	*/
+	protected interface AddSyncCallback {
+		void createLocalCollection(Account account, ServerInfo.ResourceInfo resource) throws LocalStorageException;
+	}
+
+
+	protected void addSync(Account account, String authority, List<ServerInfo.ResourceInfo> resourceList, AddSyncCallback callback) {
+		boolean sync = false;
+		for (ServerInfo.ResourceInfo resource : resourceList)
+			if (resource.isEnabled()) {
+				sync = true;
+				if (callback != null)
+					try {
+						callback.createLocalCollection(account, resource);
+					} catch(LocalStorageException e) {
+						Log.e(TAG, "Couldn't add sync collection", e);
+						Toast.makeText(getActivity(), "Couldn't set up synchronization for " + authority, Toast.LENGTH_LONG).show();
+					}
+			}
+		if (sync) {
+			ContentResolver.setIsSyncable(account, authority, 1);
+			ContentResolver.setSyncAutomatically(account, authority, true);
+		} else
+			ContentResolver.setIsSyncable(account, authority, 0);
+	}
+
 }

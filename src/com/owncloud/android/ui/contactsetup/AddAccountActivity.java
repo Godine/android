@@ -32,18 +32,13 @@ public class AddAccountActivity extends Activity {
 		
 		setContentView(R.layout.setup_add_account);
 		
-		if (savedInstanceState == null) {	// first call
-			//getFragmentManager().beginTransaction()
-			//	.add(R.id.right_pane, new LoginTypeFragment())
-			//	.commit();
+		if (savedInstanceState == null) {
 
 			FragmentTransaction ft = getFragmentManager().beginTransaction();
 
 			Bundle args = new Bundle();
-			//try {
+
 			args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
-			// } catch (URISyntaxException e) {
-			//}
 			args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
 			args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
 			args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
@@ -53,18 +48,5 @@ public class AddAccountActivity extends Activity {
 			dialog.show(ft, QueryServerDialogFragment.class.getName());
 		}
 	}
-
-	/*
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.setup_add_account, menu);
-		return true;
-	}
-
-	public void showHelp(MenuItem item) {
-		startActivityForResult(new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.WEB_URL_HELP)), 0);
-	}
-	*/
 
 }

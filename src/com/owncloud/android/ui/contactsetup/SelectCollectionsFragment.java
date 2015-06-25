@@ -29,6 +29,7 @@ import android.widget.Toast;
 
 
 import com.owncloud.android.R;
+import com.owncloud.android.authentication.AccountUtils;
 
 import java.util.List;
 
@@ -92,8 +93,6 @@ public class SelectCollectionsFragment extends ListFragment {
 	
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-		System.out.println("onCreateOptionsMenu");
-
 		inflater.inflate(R.menu.setup_account_details, menu);
 	}
 
@@ -120,7 +119,7 @@ public class SelectCollectionsFragment extends ListFragment {
 				calendar.setEnabled(false);
 			for (ServerInfo.ResourceInfo todoList : serverInfo.getTodoLists())
 				todoList.setEnabled(false);
-			
+
 			ListAdapter adapter = getListView().getAdapter();
 			for (long id : getListView().getCheckedItemIds()) {
 				int position = (int)id + 1;		// +1 because header view is inserted at pos. 0 
@@ -138,16 +137,16 @@ public class SelectCollectionsFragment extends ListFragment {
 	}
 
 	void addAccount() {
-		String accountName = serverInfo.getUserName();
+
+		Account currentAccount = AccountUtils.getCurrentOwnCloudAccount(this.getActivity());
 
 		AccountManager accountManager = AccountManager.get(getActivity());
-		Account account = new Account(accountName, Constants.ACCOUNT_TYPE);
-		Bundle userData = AccountSettings.createBundle(serverInfo);
 
-		if (accountManager.addAccountExplicitly(account, serverInfo.getPassword(), userData)) {
-			addSync(account, ContactsContract.AUTHORITY, serverInfo.getAddressBooks(), null);
+		AccountSettings.prepareAccountForUpdate(accountManager, currentAccount, serverInfo);
 
-			addSync(account, CalendarContract.AUTHORITY, serverInfo.getCalendars(), new AddSyncCallback() {
+		addSync(currentAccount, ContactsContract.AUTHORITY, serverInfo.getAddressBooks(), null);
+
+			addSync(currentAccount, CalendarContract.AUTHORITY, serverInfo.getCalendars(), new AddSyncCallback() {
 				@Override
 				public void createLocalCollection(Account account, ServerInfo.ResourceInfo calendar) throws LocalStorageException {
 					LocalCalendar.create(account, getActivity().getContentResolver(), calendar);
@@ -155,8 +154,6 @@ public class SelectCollectionsFragment extends ListFragment {
 			});
 
 			getActivity().finish();
-		} else
-			Toast.makeText(getActivity(), "Couldn't create account (account with this name already existing?)", Toast.LENGTH_LONG).show();
 	}
 
 	protected interface AddSyncCallback {

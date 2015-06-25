@@ -81,6 +81,19 @@ public class AccountSettings {
 			}
 		return bundle;
 	}
+
+	public static void prepareAccountForUpdate(AccountManager accountManager, Account account, ServerInfo serverInfo) {
+
+		accountManager.setUserData(account, KEY_SETTINGS_VERSION, String.valueOf(CURRENT_VERSION));
+		accountManager.setUserData(account, KEY_USERNAME, serverInfo.getUserName());
+		accountManager.setUserData(account, KEY_AUTH_PREEMPTIVE, Boolean.toString(serverInfo.isAuthPreemptive()));
+		for (ServerInfo.ResourceInfo addressBook : serverInfo.getAddressBooks())
+			if (addressBook.isEnabled()) {
+				accountManager.setUserData(account, KEY_ADDRESSBOOK_URL, addressBook.getURL());
+				accountManager.setUserData(account, KEY_ADDRESSBOOK_VCARD_VERSION, addressBook.getVCardVersion().getVersion());
+				break;
+			}
+	}
 	
 	
 	// authentication settings

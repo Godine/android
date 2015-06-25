@@ -126,6 +126,30 @@
                 android:resource="@xml/syncadapter_files" />
         </service>
 
+        <service
+            android:name=".syncadapter.ContactsSyncAdapterService"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/sync_contacts" />
+            <meta-data
+                android:name="android.provider.CONTACTS_STRUCTURE"
+                android:resource="@xml/contacts" />
+        </service>
+        <service
+            android:name=".syncadapter.CalendarsSyncAdapterService"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/sync_calendars" />
+        </service>
+
         <provider
             android:name=".providers.FileContentProvider"
             android:authorities="@string/authority"

@@ -23,10 +23,9 @@ import at.bitfire.davdroid.Constants;
 import com.owncloud.android.R;
 import at.bitfire.davdroid.resource.ServerInfo;
 
-public class AddAccountActivity extends Activity implements ImportItemFragment.OnFragmentInteractionListener{
+public class AddAccountActivity extends Activity {
 
 	protected ServerInfo serverInfo;
-	Account[] accounts;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -34,58 +33,22 @@ public class AddAccountActivity extends Activity implements ImportItemFragment.O
 		
 		setContentView(R.layout.setup_add_account);
 
-		final AccountManager manager = AccountManager.get(this);
-		accounts = manager.getAccountsByType(Constants.ACCOUNT_TYPE);
+		if (savedInstanceState == null) {
 
-		if(accounts.length==0){
+			FragmentTransaction ft = getFragmentManager().beginTransaction();
 
-			if (savedInstanceState == null) {	// first call
-				//getFragmentManager().beginTransaction()
-				//	.add(R.id.right_pane, new LoginTypeFragment())
-				//	.commit();
+			Bundle args = new Bundle();
 
-				FragmentTransaction ft = getFragmentManager().beginTransaction();
+			args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
+			args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
+			args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
+			args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
 
-				Bundle args = new Bundle();
-				//try {
-				args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
-				// } catch (URISyntaxException e) {
-				//}
-				args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
-				args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
-				args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
-
-				DialogFragment dialog = new QueryServerDialogFragment();
-				dialog.setArguments(args);
-				dialog.show(ft, QueryServerDialogFragment.class.getName());
-			}
-
-		} else {
-
-			if (savedInstanceState == null) {
-				getFragmentManager().beginTransaction()
-						.add(R.id.right_pane, new ImportItemFragment())
-						.commit();
-			}
+			DialogFragment dialog = new QueryServerDialogFragment();
+			dialog.setArguments(args);
+			dialog.show(ft, QueryServerDialogFragment.class.getName());
 		}
 
 	}
-
-	public void onFragmentInteraction(String id){
-
-	}
-
-	/*
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.setup_add_account, menu);
-		return true;
-	}
-
-	public void showHelp(MenuItem item) {
-		startActivityForResult(new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.WEB_URL_HELP)), 0);
-	}
-	*/
-
+	
 }

@@ -11,10 +11,14 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.owncloud.android.R;
 
 import com.owncloud.android.ui.contactsetup.dummy.DummyContent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A fragment representing a list of Items.
@@ -26,6 +30,8 @@ import com.owncloud.android.ui.contactsetup.dummy.DummyContent;
  * interface.
  */
 public class ImportItemFragment extends Fragment implements AbsListView.OnItemClickListener {
+
+    private List importListItemList;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -70,15 +76,29 @@ public class ImportItemFragment extends Fragment implements AbsListView.OnItemCl
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (getArguments() != null) {
+        /*if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
 
         // TODO: Change Adapter to display your content
         mAdapter = new ArrayAdapter<DummyContent.DummyItem>(getActivity(),
-                android.R.layout.simple_list_item_1, android.R.id.text1, DummyContent.ITEMS);
+                android.R.layout.simple_list_item_1, android.R.id.text1, DummyContent.ITEMS);*/
+
+        importListItemList = new ArrayList();
+        importListItemList.add(new ImportListItem("Import Contacts"));
+        importListItemList.add(new ImportListItem("Do something 2"));
+        importListItemList.add(new ImportListItem("Do something 3"));
+        mAdapter = new ImportListAdapter(getActivity(), importListItemList);
+
     }
+
+    /*@Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        ImportListItem item = this.importListItemList.get(position);
+        Toast.makeText(getActivity(), item.getItemTitle() + " Clicked!"
+                , Toast.LENGTH_SHORT).show();
+    }*/
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,

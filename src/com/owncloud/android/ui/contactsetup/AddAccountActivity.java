@@ -7,6 +7,8 @@
  */
 package com.owncloud.android.ui.contactsetup;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.FragmentTransaction;
@@ -21,37 +23,56 @@ import at.bitfire.davdroid.Constants;
 import com.owncloud.android.R;
 import at.bitfire.davdroid.resource.ServerInfo;
 
-public class AddAccountActivity extends Activity {
+public class AddAccountActivity extends Activity implements ImportItemFragment.OnFragmentInteractionListener{
 
 	protected ServerInfo serverInfo;
-
+	Account[] accounts;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		setContentView(R.layout.setup_add_account);
-		
-		if (savedInstanceState == null) {	// first call
-			//getFragmentManager().beginTransaction()
-			//	.add(R.id.right_pane, new LoginTypeFragment())
-			//	.commit();
 
-			FragmentTransaction ft = getFragmentManager().beginTransaction();
+		final AccountManager manager = AccountManager.get(this);
+		accounts = manager.getAccountsByType(Constants.ACCOUNT_TYPE);
 
-			Bundle args = new Bundle();
-			//try {
-			args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
-			// } catch (URISyntaxException e) {
-			//}
-			args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
-			args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
-			args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
+		if(accounts.length==0){
 
-			DialogFragment dialog = new QueryServerDialogFragment();
-			dialog.setArguments(args);
-			dialog.show(ft, QueryServerDialogFragment.class.getName());
+			if (savedInstanceState == null) {	// first call
+				//getFragmentManager().beginTransaction()
+				//	.add(R.id.right_pane, new LoginTypeFragment())
+				//	.commit();
+
+				FragmentTransaction ft = getFragmentManager().beginTransaction();
+
+				Bundle args = new Bundle();
+				//try {
+				args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
+				// } catch (URISyntaxException e) {
+				//}
+				args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
+				args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
+				args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
+
+				DialogFragment dialog = new QueryServerDialogFragment();
+				dialog.setArguments(args);
+				dialog.show(ft, QueryServerDialogFragment.class.getName());
+			}
+
+		} else {
+
+			if (savedInstanceState == null) {
+				getFragmentManager().beginTransaction()
+						.add(R.id.right_pane, new ImportItemFragment())
+						.commit();
+			}
 		}
+
+	}
+
+	public void onFragmentInteraction(String id){
+
 	}
 
 	/*

@@ -60,8 +60,8 @@ public class SelectCollectionsAdapter extends BaseAdapter implements ListAdapter
 		nAddressBookHeadings = nAddressBooks == 0 ? 0 : 1;
 		nCalendars = serverInfo.getCalendars().size();
 		nCalendarHeadings = nCalendars == 0 ? 0 : 1;
-		nTaskLists = serverInfo.getTodoLists().size();
-		nTaskListHeadings = nTaskLists == 0 ? 0 : 1;
+		nTaskLists = 0;//= serverInfo.getTodoLists().size();         These variables have been set to zero in order to
+		nTaskListHeadings = 0;//= nTaskLists == 0 ? 0 : 1;           hide the TASKS from the collections view
 	}
 	
 	

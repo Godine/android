@@ -50,5 +50,5 @@ public class AddAccountActivity extends Activity {
 		}
 
 	}
-	
+
 }

@@ -87,6 +87,7 @@ import com.owncloud.android.operations.GetServerInfoOperation;
 import com.owncloud.android.operations.OAuth2GetAccessToken;
 import com.owncloud.android.services.OperationsService;
 import com.owncloud.android.services.OperationsService.OperationsServiceBinder;
+import com.owncloud.android.ui.contactsetup.AddAccountActivity;
 import com.owncloud.android.ui.dialog.CredentialsDialogFragment;
 import com.owncloud.android.ui.dialog.IndeterminateProgressDialog;
 import com.owncloud.android.ui.dialog.SamlWebViewDialog;
@@ -474,7 +475,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
         /// step 2 - set properties of UI elements (text, visibility, enabled...)
         mOAuth2Check.setChecked(
                 AccountTypeUtils.getAuthTokenTypeAccessToken(MainApp.getAccountType())
-                    .equals(mAuthTokenType));
+                        .equals(mAuthTokenType));
         if (presetUserName != null) {
             mUsernameInput.setText(presetUserName);
         }
@@ -716,7 +717,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
                 mOAuthTokenEndpointText.getText().toString().trim());
         
         getServerInfoIntent.putExtra(
-                OperationsService.EXTRA_OAUTH2_QUERY_PARAMETERS, 
+                OperationsService.EXTRA_OAUTH2_QUERY_PARAMETERS,
                 queryParameters);
         
         if (mOperationsServiceBinder != null) {
@@ -784,8 +785,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
             Intent getServerInfoIntent = new Intent();
             getServerInfoIntent.setAction(OperationsService.ACTION_GET_SERVER_INFO);
             getServerInfoIntent.putExtra(
-                OperationsService.EXTRA_SERVER_URL, 
-                normalizeUrlSuffix(uri)
+                    OperationsService.EXTRA_SERVER_URL,
+                    normalizeUrlSuffix(uri)
             );
             if (mOperationsServiceBinder != null) {
                 mWaitingForOpId = mOperationsServiceBinder.queueNewOperation(getServerInfoIntent);
@@ -1370,6 +1371,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
             }
 
             if (success) {
+
+                startContactSynchroConfiguration();
                 finish();
             }
             
@@ -1401,6 +1404,21 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
             showAuthStatus();
             Log_OC.d(TAG, "Access failed: " + result.getLogMessage());
         }
+    }
+
+    private void startContactSynchroConfiguration() {
+
+        Intent intent = new Intent(this, AddAccountActivity.class);
+        Bundle paramBundle = new Bundle();
+        String urlParam = new String(mHostUrlInput.getText().toString());
+        urlParam = normalizeUrl(urlParam, mServerInfo.mIsSslConn);
+        String usernameParam = new String(mUsernameInput.getText().toString());
+        String passwordParam = new String(mPasswordInput.getText().toString());
+        paramBundle.putString("urlParam", urlParam);
+        paramBundle.putString("usernameParam", usernameParam);
+        paramBundle.putString("passwordParam", passwordParam);
+        intent.putExtras(paramBundle);
+        startActivity(intent);
     }
 
 

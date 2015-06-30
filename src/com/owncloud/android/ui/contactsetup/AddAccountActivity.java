@@ -35,13 +35,22 @@ public class AddAccountActivity extends Activity {
 
 		if (savedInstanceState == null) {
 
+			Bundle paramBundle = getIntent().getExtras();
+			String urlParam = paramBundle.getString("urlParam");
+			String usernameParam = paramBundle.getString("usernameParam");
+			String passwordParam = paramBundle.getString("passwordParam");
+
+			System.out.println("Got Parameters urlParam: " + urlParam
+			+ " usernameParam: " + usernameParam
+			+ " passwordParam: " + passwordParam);
+
 			FragmentTransaction ft = getFragmentManager().beginTransaction();
 
 			Bundle args = new Bundle();
 
-			args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
-			args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
-			args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
+			args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, urlParam);
+			args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, usernameParam);
+			args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,passwordParam);
 			args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
 
 			DialogFragment dialog = new QueryServerDialogFragment();

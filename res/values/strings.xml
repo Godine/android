@@ -358,5 +358,6 @@
     <string name="setup_select_task_lists">Select task lists for synchronization:</string>
     <string name="setup_add_account">Add account</string>
     <string name="settings_title">Settings</string>
+    <string name="reset_password">Lost password?</string>
 
 </resources>

@@ -1,23 +1,22 @@
 /**
- *   ownCloud Android client application
+ * ownCloud Android client application
  *
- *   @author Bartek Przybylski
- *   @author David A. Velasco
- *   Copyright (C) 2011  Bartek Przybylski
- *   Copyright (C) 2015 ownCloud Inc.
- *
- *   This program is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2,
- *   as published by the Free Software Foundation.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * @author Bartek Przybylski
+ * @author David A. Velasco
+ * Copyright (C) 2011  Bartek Przybylski
+ * Copyright (C) 2015 ownCloud Inc.
+ * <p/>
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2,
+ * as published by the Free Software Foundation.
+ * <p/>
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * <p/>
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.owncloud.android.ui.activity;
 
@@ -25,7 +24,9 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
+import android.app.ActivityManager;
 import android.app.DialogFragment;
+import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Context;
@@ -34,19 +35,24 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.ResultReceiver;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
+import android.provider.ContactsContract;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ListAdapter;
@@ -63,29 +69,31 @@ import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.authentication.AuthenticatorActivity;
 import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
+import com.owncloud.android.datamodel.contact.ContactAccount;
 import com.owncloud.android.db.DbHandler;
 import com.owncloud.android.files.FileOperationsHelper;
 import com.owncloud.android.files.services.FileDownloader;
 import com.owncloud.android.files.services.FileUploader;
 import com.owncloud.android.lib.common.utils.Log_OC;
+import com.owncloud.android.services.ContactSynchronizationService;
 import com.owncloud.android.services.OperationsService;
 import com.owncloud.android.ui.RadioButtonPreference;
-import com.owncloud.android.ui.contactsetup.AddAccountActivity;
-import com.owncloud.android.ui.contactsetup.QueryServerDialogFragment;
+import com.owncloud.android.ui.fragment.AccountsDialogFragment;
+import com.owncloud.android.ui.fragment.AccountsDialogFragment.AccountChooseListener;
+import com.owncloud.android.utils.ContactUtils;
 import com.owncloud.android.utils.DisplayUtils;
 
-import java.io.File;
-import java.net.URISyntaxException;
-
-import at.bitfire.davdroid.resource.ServerInfo;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 
 /**
  * An Activity that allows the user to change the application's settings.
  */
 public class Preferences extends SherlockPreferenceActivity
-        implements AccountManagerCallback<Boolean>, ComponentsGetter {
-    
+        implements AccountManagerCallback<Boolean>, ComponentsGetter, AccountChooseListener {
+
     private static final String TAG = "OwnCloudPreferences";
 
     private static final int ACTION_SELECT_UPLOAD_PATH = 1;
@@ -116,7 +124,10 @@ public class Preferences extends SherlockPreferenceActivity
     @SuppressWarnings("deprecation")
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+
         super.onCreate(savedInstanceState);
+
         mDbHandler = new DbHandler(getBaseContext());
         addPreferencesFromResource(R.xml.preferences);
 
@@ -156,7 +167,7 @@ public class Preferences extends SherlockPreferenceActivity
                 return false;
             }
         });
-        
+
         // Load package info
         String temp;
         try {
@@ -165,14 +176,14 @@ public class Preferences extends SherlockPreferenceActivity
         } catch (NameNotFoundException e) {
             temp = "";
             Log_OC.e(TAG, "Error while showing about dialog", e);
-        } 
+        }
         final String appVersion = temp;
-       
+
         // Register context menu for list of preferences.
         registerForContextMenu(getListView());
 
         pCode = (CheckBoxPreference) findPreference("set_pincode");
-        if (pCode != null){
+        if (pCode != null) {
             pCode.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -180,54 +191,41 @@ public class Preferences extends SherlockPreferenceActivity
                     i.putExtra(PinCodeActivity.EXTRA_ACTIVITY, "preferences");
                     i.putExtra(PinCodeActivity.EXTRA_NEW_STATE, newValue.toString());
                     startActivity(i);
-                    
-                    return true;
-                }
-            });            
-            
-        }
-
-        Preference pContact = findPreference("configure");
-        if(pContact != null) {
-            pContact.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-
-
-                    /*
-                    FragmentTransaction ft = getFragmentManager().beginTransaction();
-
-                    Bundle args = new Bundle();
-                    //try {
-                        args.putString(QueryServerDialogFragment.EXTRA_BASE_URI, "https://moncloud.iam.ma");
-                   // } catch (URISyntaxException e) {
-                    //}
-                    args.putString(QueryServerDialogFragment.EXTRA_USER_NAME, "testib@ib-maroc.com");
-                    args.putString(QueryServerDialogFragment.EXTRA_PASSWORD,"IB@Cloud2015");
-                    args.putBoolean(QueryServerDialogFragment.EXTRA_AUTH_PREEMPTIVE, true);
-
-                    DialogFragment dialog = new QueryServerDialogFragment();
-                    dialog.setArguments(args);
-                    dialog.show(ft, QueryServerDialogFragment.class.getName());
-                    */
-                    Intent intent = new Intent(Preferences.this, AddAccountActivity.class);
-                    startActivity(intent);
 
                     return true;
                 }
             });
+
+        }
+
+        Preference pContact = findPreference("configure");
+        if (pContact != null) {
+            pContact.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    displayContactsToSynchronizeDialog();
+                    return true;
+                }
+            });
+        }
+        // check if synchro service is running
+        if (isMyServiceRunning(ContactSynchronizationService.class)) {
+            setProgressBarIndeterminateVisibility(Boolean.TRUE);
+            if (pContact != null) {
+                pContact.setEnabled(false);
+            }
         }
 
         PreferenceCategory preferenceCategory = (PreferenceCategory) findPreference("more");
-        
+
         boolean helpEnabled = getResources().getBoolean(R.bool.help_enabled);
-        Preference pHelp =  findPreference("help");
-        if (pHelp != null ){
+        Preference pHelp = findPreference("help");
+        if (pHelp != null) {
             if (helpEnabled) {
                 pHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        String helpWeb   =(String) getText(R.string.url_help);
+                        String helpWeb = (String) getText(R.string.url_help);
                         if (helpWeb != null && helpWeb.length() > 0) {
                             Uri uriUrl = Uri.parse(helpWeb);
                             Intent intent = new Intent(Intent.ACTION_VIEW, uriUrl);
@@ -239,74 +237,73 @@ public class Preferences extends SherlockPreferenceActivity
             } else {
                 preferenceCategory.removePreference(pHelp);
             }
-            
+
         }
-        
-       
-       boolean recommendEnabled = getResources().getBoolean(R.bool.recommend_enabled);
-       Preference pRecommend =  findPreference("recommend");
-        if (pRecommend != null){
+
+
+        boolean recommendEnabled = getResources().getBoolean(R.bool.recommend_enabled);
+        Preference pRecommend = findPreference("recommend");
+        if (pRecommend != null) {
             if (recommendEnabled) {
                 pRecommend.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
 
-                        Intent intent = new Intent(Intent.ACTION_SENDTO); 
+                        Intent intent = new Intent(Intent.ACTION_SENDTO);
                         intent.setType("text/plain");
-                        intent.setData(Uri.parse(getString(R.string.mail_recommend))); 
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); 
-                        
+                        intent.setData(Uri.parse(getString(R.string.mail_recommend)));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
                         String appName = getString(R.string.app_name);
                         String downloadUrl = getString(R.string.url_app_download);
                         Account currentAccount = AccountUtils.getCurrentOwnCloudAccount(Preferences.this);
-                        String username = currentAccount.name.substring(0, currentAccount.name.lastIndexOf('@'));
-                        
+
                         String recommendSubject = String.format(getString(R.string.recommend_subject), appName);
                         String recommendText = String.format(getString(R.string.recommend_text),
-                                appName, downloadUrl, username);
-                        
+                                appName, downloadUrl);
+
                         intent.putExtra(Intent.EXTRA_SUBJECT, recommendSubject);
                         intent.putExtra(Intent.EXTRA_TEXT, recommendText);
                         startActivity(intent);
 
-                        return(true);
+                        return (true);
 
                     }
                 });
             } else {
                 preferenceCategory.removePreference(pRecommend);
             }
-            
+
         }
-        
+
         boolean feedbackEnabled = getResources().getBoolean(R.bool.feedback_enabled);
-        Preference pFeedback =  findPreference("feedback");
-        if (pFeedback != null){
+        Preference pFeedback = findPreference("feedback");
+        if (pFeedback != null) {
             if (feedbackEnabled) {
                 pFeedback.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        String feedbackMail   =(String) getText(R.string.mail_feedback);
-                        String feedback   =(String) getText(R.string.prefs_feedback) + " - android v" + appVersion;
-                        Intent intent = new Intent(Intent.ACTION_SENDTO); 
+                        String feedbackMail = (String) getText(R.string.mail_feedback);
+                        String feedback = (String) getText(R.string.prefs_feedback) + " - android v" + appVersion;
+                        Intent intent = new Intent(Intent.ACTION_SENDTO);
                         intent.setType("text/plain");
                         intent.putExtra(Intent.EXTRA_SUBJECT, feedback);
-                        
-                        intent.setData(Uri.parse(feedbackMail)); 
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); 
+
+                        intent.setData(Uri.parse(feedbackMail));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(intent);
-                        
+
                         return true;
                     }
                 });
             } else {
                 preferenceCategory.removePreference(pFeedback);
             }
-            
+
         }
-        
+
         boolean imprintEnabled = getResources().getBoolean(R.bool.imprint_enabled);
-        Preference pImprint =  findPreference("imprint");
+        Preference pImprint = findPreference("imprint");
         if (pImprint != null) {
             if (imprintEnabled) {
                 pImprint.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -327,62 +324,62 @@ public class Preferences extends SherlockPreferenceActivity
             }
         }
 
-        mPrefInstantUploadPath =  findPreference("instant_upload_path");
-        if (mPrefInstantUploadPath != null){
+        mPrefInstantUploadPath = findPreference("instant_upload_path");
+        if (mPrefInstantUploadPath != null) {
 
             mPrefInstantUploadPath.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        if (!mUploadPath.endsWith(OCFile.PATH_SEPARATOR)) {
-                            mUploadPath += OCFile.PATH_SEPARATOR;
-                        }
-                        Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
-                        intent.putExtra(UploadPathActivity.KEY_INSTANT_UPLOAD_PATH, mUploadPath);
-                        startActivityForResult(intent, ACTION_SELECT_UPLOAD_PATH);
-                        return true;
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    if (!mUploadPath.endsWith(OCFile.PATH_SEPARATOR)) {
+                        mUploadPath += OCFile.PATH_SEPARATOR;
                     }
-                });
+                    Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
+                    intent.putExtra(UploadPathActivity.KEY_INSTANT_UPLOAD_PATH, mUploadPath);
+                    startActivityForResult(intent, ACTION_SELECT_UPLOAD_PATH);
+                    return true;
+                }
+            });
         }
-        
+
         mPrefInstantUploadCategory = (PreferenceCategory) findPreference("instant_uploading_category");
-        
-        mPrefInstantUploadPathWiFi =  findPreference("instant_upload_on_wifi");
+
+        mPrefInstantUploadPathWiFi = findPreference("instant_upload_on_wifi");
         mPrefInstantUpload = findPreference("instant_uploading");
-        
+
         toggleInstantPictureOptions(((CheckBoxPreference) mPrefInstantUpload).isChecked());
-        
+
         mPrefInstantUpload.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-            
+
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
                 toggleInstantPictureOptions((Boolean) newValue);
                 return true;
             }
         });
-       
-        mPrefInstantVideoUploadPath =  findPreference("instant_video_upload_path");
-        if (mPrefInstantVideoUploadPath != null){
+
+        mPrefInstantVideoUploadPath = findPreference("instant_video_upload_path");
+        if (mPrefInstantVideoUploadPath != null) {
 
             mPrefInstantVideoUploadPath.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        if (!mUploadVideoPath.endsWith(OCFile.PATH_SEPARATOR)) {
-                            mUploadVideoPath += OCFile.PATH_SEPARATOR;
-                        }
-                        Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
-                        intent.putExtra(UploadPathActivity.KEY_INSTANT_UPLOAD_PATH, mUploadVideoPath);
-                        startActivityForResult(intent, ACTION_SELECT_UPLOAD_VIDEO_PATH);
-                        return true;
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    if (!mUploadVideoPath.endsWith(OCFile.PATH_SEPARATOR)) {
+                        mUploadVideoPath += OCFile.PATH_SEPARATOR;
                     }
-                });
+                    Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
+                    intent.putExtra(UploadPathActivity.KEY_INSTANT_UPLOAD_PATH, mUploadVideoPath);
+                    startActivityForResult(intent, ACTION_SELECT_UPLOAD_VIDEO_PATH);
+                    return true;
+                }
+            });
         }
-        
-        mPrefInstantVideoUploadPathWiFi =  findPreference("instant_video_upload_on_wifi");
+
+        mPrefInstantVideoUploadPathWiFi = findPreference("instant_video_upload_on_wifi");
         mPrefInstantVideoUpload = findPreference("instant_video_uploading");
         toggleInstantVideoOptions(((CheckBoxPreference) mPrefInstantVideoUpload).isChecked());
-        
+
         mPrefInstantVideoUpload.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-            
+
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
                 toggleInstantVideoOptions((Boolean) newValue);
@@ -391,14 +388,14 @@ public class Preferences extends SherlockPreferenceActivity
         });
             
         /* About App */
-       pAboutApp = (Preference) findPreference("about_app");
-       if (pAboutApp != null) { 
-               pAboutApp.setTitle(String.format(getString(R.string.about_android), getString(R.string.app_name)));
-               pAboutApp.setSummary(String.format(getString(R.string.about_version), appVersion));
-       }
+        pAboutApp = (Preference) findPreference("about_app");
+        if (pAboutApp != null) {
+            pAboutApp.setTitle(String.format(getString(R.string.about_android), getString(R.string.app_name)));
+            pAboutApp.setSummary(String.format(getString(R.string.about_version), appVersion));
+        }
 
-       loadInstantUploadPath();
-       loadInstantUploadVideoPath();
+        loadInstantUploadPath();
+        loadInstantUploadVideoPath();
 
         /* ComponentsGetter */
         mDownloadServiceConnection = newTransferenceServiceConnection();
@@ -413,9 +410,9 @@ public class Preferences extends SherlockPreferenceActivity
         }
 
     }
-    
-    private void toggleInstantPictureOptions(Boolean value){
-        if (value){
+
+    private void toggleInstantPictureOptions(Boolean value) {
+        if (value) {
             mPrefInstantUploadCategory.addPreference(mPrefInstantUploadPathWiFi);
             mPrefInstantUploadCategory.addPreference(mPrefInstantUploadPath);
         } else {
@@ -423,9 +420,9 @@ public class Preferences extends SherlockPreferenceActivity
             mPrefInstantUploadCategory.removePreference(mPrefInstantUploadPath);
         }
     }
-    
-    private void toggleInstantVideoOptions(Boolean value){
-        if (value){
+
+    private void toggleInstantVideoOptions(Boolean value) {
+        if (value) {
             mPrefInstantUploadCategory.addPreference(mPrefInstantVideoUploadPathWiFi);
             mPrefInstantUploadCategory.addPreference(mPrefInstantVideoUploadPath);
         } else {
@@ -455,7 +452,7 @@ public class Preferences extends SherlockPreferenceActivity
      * Called when the user clicked on an item into the context menu created at
      * {@link #onCreateContextMenu(ContextMenu, View, ContextMenuInfo)} for
      * every ownCloud {@link Account} , containing 'secondary actions' for them.
-     * 
+     * <p/>
      * {@inheritDoc}
      */
     @Override
@@ -535,14 +532,14 @@ public class Preferences extends SherlockPreferenceActivity
         Intent intent;
 
         switch (item.getItemId()) {
-        case android.R.id.home:
-            intent = new Intent(getBaseContext(), FileDisplayActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-            break;
-        default:
-            Log_OC.w(TAG, "Unknown menu item triggered");
-            return false;
+            case android.R.id.home:
+                intent = new Intent(getBaseContext(), FileDisplayActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                break;
+            default:
+                Log_OC.w(TAG, "Unknown menu item triggered");
+                return false;
         }
         return true;
     }
@@ -551,7 +548,7 @@ public class Preferences extends SherlockPreferenceActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == ACTION_SELECT_UPLOAD_PATH && resultCode == RESULT_OK){
+        if (requestCode == ACTION_SELECT_UPLOAD_PATH && resultCode == RESULT_OK) {
 
             OCFile folderToUpload = (OCFile) data.getParcelableExtra(UploadPathActivity.EXTRA_FOLDER);
 
@@ -564,7 +561,7 @@ public class Preferences extends SherlockPreferenceActivity
 
             saveInstantUploadPathOnPreferences();
 
-        } else if (requestCode == ACTION_SELECT_UPLOAD_VIDEO_PATH && resultCode == RESULT_OK){
+        } else if (requestCode == ACTION_SELECT_UPLOAD_VIDEO_PATH && resultCode == RESULT_OK) {
 
             OCFile folderToUploadVideo = (OCFile) data.getParcelableExtra(UploadPathActivity.EXTRA_FOLDER);
 
@@ -616,8 +613,7 @@ public class Preferences extends SherlockPreferenceActivity
             am.addAccount(MainApp.getAccountType(), null, null, null, this,
                     null,
                     null);
-        }
-        else {
+        } else {
 
             for (Account a : accounts) {
                 RadioButtonPreference accountPreference = new RadioButtonPreference(this);
@@ -642,7 +638,7 @@ public class Preferences extends SherlockPreferenceActivity
                         for (Account a : accounts) {
                             RadioButtonPreference p = (RadioButtonPreference) findPreference(a.name);
                             if (key.equals(a.name)) {
-                                boolean accountChanged = !p.isChecked(); 
+                                boolean accountChanged = !p.isChecked();
                                 p.setChecked(true);
                                 AccountUtils.setCurrentOwnCloudAccount(
                                         getApplicationContext(),
@@ -651,7 +647,7 @@ public class Preferences extends SherlockPreferenceActivity
                                 if (accountChanged) {
                                     // restart the main activity
                                     Intent i = new Intent(
-                                            Preferences.this, 
+                                            Preferences.this,
                                             FileDisplayActivity.class
                                     );
                                     i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -711,7 +707,7 @@ public class Preferences extends SherlockPreferenceActivity
      * Save the "Instant Upload Path" on preferences
      */
     private void saveInstantUploadPathOnPreferences() {
-        SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());        
+        SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = appPrefs.edit();
         editor.putString("instant_upload_path", mUploadPath);
         editor.commit();
@@ -730,7 +726,7 @@ public class Preferences extends SherlockPreferenceActivity
      * Save the "Instant Video Upload Path" on preferences
      */
     private void saveInstantUploadVideoPathOnPreferences() {
-        SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());        
+        SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = appPrefs.edit();
         editor.putString("instant_video_upload_path", mUploadVideoPath);
         editor.commit();
@@ -767,7 +763,24 @@ public class Preferences extends SherlockPreferenceActivity
         return new PreferencesServiceConnection();
     }
 
-    /** Defines callbacks for service binding, passed to bindService() */
+    @Override
+    public void onAccountChosen(final ContactAccount account) {
+        mSynchronizationResultReceiver = new SynchronizationResultReceiver(new Handler());
+
+        Intent intent = new Intent(this, ContactSynchronizationService.class);
+        intent.putExtra(ContactSynchronizationService.BUNDLE_ACCOUNT, account);
+        intent.putExtra(ContactSynchronizationService.BUNDLE_RESULT_RECEIVER, mSynchronizationResultReceiver);
+        setProgressBarIndeterminateVisibility(Boolean.TRUE);
+        Preference pContact = findPreference("configure");
+        if (pContact != null) {
+            pContact.setEnabled(false);
+        }
+        startService(intent);
+    }
+
+    /**
+     * Defines callbacks for service binding, passed to bindService()
+     */
     private class PreferencesServiceConnection implements ServiceConnection {
 
         @Override
@@ -795,5 +808,82 @@ public class Preferences extends SherlockPreferenceActivity
                 mUploaderBinder = null;
             }
         }
+    }
+
+    ;
+
+    private static final String[] PROJECTION_ACCOUNTS = new String[]{
+            ContactsContract.Contacts._ID,
+            ContactsContract.RawContacts.ACCOUNT_TYPE,
+            ContactsContract.RawContacts.ACCOUNT_NAME
     };
+
+    private void displayContactsToSynchronizeDialog() {
+        HashMap<ContactAccount, Integer> accountsWithContacts = new HashMap<>();
+        final Cursor cursor = getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, PROJECTION_ACCOUNTS, null, null, ContactsContract.RawContacts.ACCOUNT_TYPE);
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+                String type = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_TYPE));
+                String name = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_NAME));
+                ContactAccount contactAccount = new ContactAccount(type, name);
+                if (accountsWithContacts.containsKey(contactAccount)) {
+                    accountsWithContacts.put(contactAccount, accountsWithContacts.get(contactAccount) + 1);
+                } else {
+                    accountsWithContacts.put(contactAccount, 1);
+                }
+            }
+            cursor.close();
+        }
+
+        if (accountsWithContacts.size() > 0) {
+            // remove current selected account from the list
+            final Account currentOwnCloudAccount = AccountUtils.getCurrentOwnCloudAccount(getApplicationContext());
+            ContactAccount contactAccount = new ContactAccount(currentOwnCloudAccount.type, currentOwnCloudAccount.name);
+            accountsWithContacts.remove(contactAccount);
+
+            ArrayList<ContactAccount> contactAccounts = new ArrayList<>(accountsWithContacts.size());
+            for (Iterator<ContactAccount> it = accountsWithContacts.keySet().iterator(); it.hasNext(); ) {
+                final ContactAccount account = it.next();
+                account.setCount(accountsWithContacts.get(account));
+                contactAccounts.add(account);
+            }
+
+            FragmentTransaction ft = getFragmentManager().beginTransaction();
+            Fragment prev = getFragmentManager().findFragmentByTag("dialog");
+            if (prev != null) {
+                ft.remove(prev);
+            }
+            ft.addToBackStack(null);
+            DialogFragment newFragment = AccountsDialogFragment.newInstance(contactAccounts);
+            newFragment.show(ft, "dialog");
+        }
+    }
+
+    private SynchronizationResultReceiver mSynchronizationResultReceiver;
+
+    public class SynchronizationResultReceiver extends ResultReceiver {
+        public SynchronizationResultReceiver(final Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(final int resultCode, final Bundle resultData) {
+            setProgressBarIndeterminateVisibility(Boolean.FALSE);
+            Toast.makeText(getApplicationContext(), getString(R.string.contact_synchronization), Toast.LENGTH_LONG).show();
+            Preference pContact = findPreference("configure");
+            if (pContact != null) {
+                pContact.setEnabled(true);
+            }
+        }
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

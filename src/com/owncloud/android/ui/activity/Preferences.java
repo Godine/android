@@ -820,7 +820,7 @@ public class Preferences extends SherlockPreferenceActivity
 
     private void displayContactsToSynchronizeDialog() {
         HashMap<ContactAccount, Integer> accountsWithContacts = new HashMap<>();
-        final Cursor cursor = getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, PROJECTION_ACCOUNTS, null, null, ContactsContract.RawContacts.ACCOUNT_TYPE);
+        final Cursor cursor = getContentResolver().query(ContactsContract.RawContacts.CONTENT_URI, PROJECTION_ACCOUNTS, null, null, ContactsContract.RawContacts.ACCOUNT_TYPE);
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 String type = cursor.getString(cursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_TYPE));

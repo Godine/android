@@ -92,9 +92,10 @@ public class ContactUtils {
     public static void duplicateContactsForAccount(final Context context, final List<Contact> contacts, final Account currentAccount) {
         Log.i("Synchro", "Synchronizing " + contacts.size() + " contacts int account " + currentAccount.name);
 
-        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        ArrayList<ContentProviderOperation> ops;
 
         for (final Contact contact : contacts) {
+            ops = new ArrayList<>();
             Log.i("Synchro", "Synchronize " + contact.getName() + " start");
             ops.add(ContentProviderOperation.newInsert(
                     RawContacts.CONTENT_URI)

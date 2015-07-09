@@ -47,8 +47,7 @@ public class ContactUtils {
     // ---------------------------------
     private static final String[] PROJECTION = new String[]{
             Contacts._ID,
-            Contacts.DISPLAY_NAME,
-            Contacts.HAS_PHONE_NUMBER
+            Contacts.DISPLAY_NAME
     };
     private static final String SELECTION_FOR_ACCOUNT = RawContacts.ACCOUNT_TYPE + "=? AND " + RawContacts.ACCOUNT_NAME + "=?";
 
@@ -56,7 +55,7 @@ public class ContactUtils {
     // PUBLIC
     // ---------------------------------
     public static void synchronizeContactForAccount(Context context, ContactAccount contactAccount) {
-        final Cursor cursor = context.getContentResolver().query(Contacts.CONTENT_URI,
+        final Cursor cursor = context.getContentResolver().query(RawContacts.CONTENT_URI,
                 PROJECTION,
                 SELECTION_FOR_ACCOUNT,
                 new String[]{contactAccount.getType(), contactAccount.getName()},
@@ -66,14 +65,11 @@ public class ContactUtils {
             while (cursor.moveToNext()) {
                 long contactId = cursor.getLong(cursor.getColumnIndex(Contacts._ID));
                 String name = cursor.getString(cursor.getColumnIndex(Contacts.DISPLAY_NAME));
-                int hasPhone = cursor.getInt(cursor.getColumnIndex(Contacts.HAS_PHONE_NUMBER));
 
                 if (contactId != 0 && name != null) {
                     Contact contact = ContactUtils.getContactCommonDetails(context, contactId, name);
 
-                    if (hasPhone > 0) {
-                        contact.setPhones(ContactUtils.getContactPhones(context, contactId));
-                    }
+                    contact.setPhones(ContactUtils.getContactPhones(context, contactId));
                     contact.setEmails(ContactUtils.getContactEmails(context, contactId));
                     contact.setAddresses(ContactUtils.getContactAddresses(context, contactId));
                     contact.setIms(ContactUtils.getContactIm(context, contactId));

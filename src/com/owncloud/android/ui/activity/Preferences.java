@@ -209,6 +209,7 @@ public class Preferences extends SherlockPreferenceActivity
             });
         }
         // check if synchro service is running
+        setProgressBarIndeterminateVisibility(Boolean.FALSE);
         if (isMyServiceRunning(ContactSynchronizationService.class)) {
             setProgressBarIndeterminateVisibility(Boolean.TRUE);
             if (pContact != null) {

@@ -210,7 +210,7 @@
             </intent-filter>
         </receiver>
         <service android:name=".services.observer.FileObserverService"/>
-        <service android:name=".services.ContactSynchronizationService"/>
+        <service android:name=".services.ContactSynchronizationService" android:exported="false" />
 
 		<activity
 			android:name=".ui.activity.CopyToClipboardActivity"

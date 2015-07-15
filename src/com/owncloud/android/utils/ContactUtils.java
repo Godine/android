@@ -46,8 +46,8 @@ public class ContactUtils {
     // CONSTANTS
     // ---------------------------------
     private static final String[] PROJECTION = new String[]{
-            Contacts._ID,
-            Contacts.DISPLAY_NAME
+            Data.CONTACT_ID,
+            Data.DISPLAY_NAME
     };
     private static final String SELECTION_FOR_ACCOUNT = RawContacts.ACCOUNT_TYPE + "=? AND " + RawContacts.ACCOUNT_NAME + "=?";
 
@@ -63,8 +63,8 @@ public class ContactUtils {
         if (cursor != null) {
             List<Contact> contacts = new ArrayList<>();
             while (cursor.moveToNext()) {
-                long contactId = cursor.getLong(cursor.getColumnIndex(Contacts._ID));
-                String name = cursor.getString(cursor.getColumnIndex(Contacts.DISPLAY_NAME));
+                long contactId = cursor.getLong(cursor.getColumnIndex(Data.CONTACT_ID));
+                String name = cursor.getString(cursor.getColumnIndex(Data.DISPLAY_NAME));
 
                 if (contactId != 0 && name != null) {
                     Contact contact = ContactUtils.getContactCommonDetails(context, contactId, name);
@@ -94,6 +94,7 @@ public class ContactUtils {
 
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
 
+        int count = 1;
         for (final Contact contact : contacts) {
             ops.clear();
             Log.i("Synchro", "Synchronize " + contact.getName() + " start");
@@ -245,7 +246,7 @@ public class ContactUtils {
 
             try {
                 context.getContentResolver().applyBatch(AUTHORITY, ops);
-                Log.i("Synchro", "Synchronize " + contact.getName() + " done");
+                Log.i("Synchro", count++ + " Synchronize " + contact.getName() + " done");
             } catch (RemoteException | OperationApplicationException e) {
                 Log.e("Synchro", "Unable to duplicate contact " + contact.getName(), e);
             }
@@ -311,7 +312,7 @@ public class ContactUtils {
                         addrCur.getColumnIndex(StructuredPostal.POSTCODE));
                 String country = addrCur.getString(
                         addrCur.getColumnIndex(StructuredPostal.COUNTRY));
-                String type = addrCur.getString(
+                int type = addrCur.getInt(
                         addrCur.getColumnIndex(StructuredPostal.TYPE));
 
                 Address address = new Address(street, city, state, postalCode, country, type);

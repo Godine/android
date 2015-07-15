@@ -6,9 +6,9 @@ public class Address {
     private String mRegion;
     private String mPostalCode;
     private String mCountry;
-    private String mType;
+    private int mType;
 
-    public Address(final String streetAddress, final String city, final String region, final String postalCode, final String country, final String type) {
+    public Address(final String streetAddress, final String city, final String region, final String postalCode, final String country, final int type) {
         this.mStreet = streetAddress;
         this.mCity = city;
         this.mRegion = region;
@@ -17,7 +17,7 @@ public class Address {
         this.mType = type;
     }
 
-    public String getType() {
+    public int getType() {
         return mType;
     }
 
